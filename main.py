@@ -30,7 +30,7 @@ def main():
     # Create dataloaders
     train_loader, test_loader = create_dataloaders(args.data_dir, args.batch_size)
     
-    # Create model
+    # Create model 
     model = UNet(n_channels=1, n_classes=1, bilinear=False)
     
     if args.mode == 'train':

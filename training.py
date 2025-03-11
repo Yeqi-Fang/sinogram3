@@ -1,6 +1,9 @@
 import torch.optim as optim
 import time
 from tqdm import tqdm
+import torch.nn as nn
+import torch
+
 
 def train_model(model, train_loader, test_loader, num_epochs=50, device='cuda', save_path='model.pth'):
     # Move model to device
@@ -45,6 +48,7 @@ def train_model(model, train_loader, test_loader, num_epochs=50, device='cuda', 
         model.eval()
         val_loss = 0.0
         val_batches = 0
+        
         
         with torch.no_grad():
             for incomplete, complete in tqdm(test_loader, desc=f'Epoch {epoch+1}/{num_epochs} (Test)'):
