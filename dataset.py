@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 class SinogramDataset(Dataset):
     def __init__(self, data_dir, is_train=True, transform=None):
@@ -22,18 +23,31 @@ class SinogramDataset(Dataset):
         # Create all possible (i,j) pairs
         self.pairs = [(i, j) for i in self.i_range for j in self.j_range]
         
+        # Preload all data into memory
+        print(f"Preloading {'training' if is_train else 'testing'} data into memory...")
+        self.incomplete_data = {}
+        self.complete_data = {}
+        
+        for i, j in tqdm(self.pairs):
+            # Define file paths
+            incomplete_path = os.path.join(self.data_dir, f"incomplete_{i}_{j}.npy")
+            complete_path = os.path.join(self.data_dir, f"complete_{i}_{j}.npy")
+            
+            # Load data as float16 to save memory during preloading
+            self.incomplete_data[(i, j)] = np.load(incomplete_path).astype(np.float16)
+            self.complete_data[(i, j)] = np.load(complete_path).astype(np.float16)
+        
+        print(f"Successfully preloaded {len(self.pairs)} pairs of sinograms")
+        
     def __len__(self):
         return len(self.pairs)
     
     def __getitem__(self, idx):
         i, j = self.pairs[idx]
         
-        # Load complete and incomplete sinograms
-        incomplete_path = os.path.join(self.data_dir, f"incomplete_{i}_{j}.npy")
-        complete_path = os.path.join(self.data_dir, f"complete_{i}_{j}.npy")
-        
-        incomplete = np.load(incomplete_path).astype(np.float32)
-        complete = np.load(complete_path).astype(np.float32)
+        # Get data from memory
+        incomplete = self.incomplete_data[(i, j)].astype(np.float32)
+        complete = self.complete_data[(i, j)].astype(np.float32)
         
         # Convert to torch tensors
         incomplete = torch.from_numpy(incomplete)
