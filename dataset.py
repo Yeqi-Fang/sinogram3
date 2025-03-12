@@ -16,7 +16,7 @@ class SinogramDataset(Dataset):
         if is_train:
             self.i_range = range(1, 171 - 50)  # 1 to 170
         else:
-            self.i_range = range(1, 37)   # 1 to 36
+            self.i_range = range(1, 37 - 12)   # 1 to 36
             
         self.j_range = range(1, 1765)  # 1 to 1764
         

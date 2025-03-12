@@ -1,0 +1,5 @@
+<<<<<<< HEAD
+python main.py --data_dir /mnt/d/fyq/sinogram/2e9div --mode train --batch_size 24 --num_epochs 10
+=======
+python main.py --data_dir /mnt/d/fyq/sinogram/2e9div --mode train --batch_size 48 --num_epochs 500
+>>>>>>> ffefcad5d5b342a184e667d989130c94a8d56306
