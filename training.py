@@ -223,7 +223,7 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
             print(f"Visualization saved to {vis_path}")
     
     # Load best model
-    checkpoint = torch.load(save_path)
+    checkpoint = torch.load(save_path, weights_only=False)
     model.load_state_dict(checkpoint['model_state_dict'])
     
     return model
