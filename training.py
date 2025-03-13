@@ -6,11 +6,13 @@ import torch
 from torch.cuda.amp import autocast, GradScaler
 import matplotlib.pyplot as plt
 import os
+import random
 import numpy as np
 
 def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, device='cuda', 
                 save_path='model.pth', vis_dir='visualizations', optimizer_state=None, 
-                scaler_state=None, best_loss=float('inf')):
+                scaler_state=None, best_loss=float('inf'), scheduler_state=None, 
+                random_state=None, vis_data=None):
     """
     Train the model with support for resuming from checkpoints
     
@@ -26,6 +28,9 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
         optimizer_state: State dict of optimizer (for resuming)
         scaler_state: State dict of gradient scaler (for resuming)
         best_loss: Best validation loss so far (for resuming)
+        scheduler_state: State dict of learning rate scheduler (for resuming)
+        random_state: Dictionary of random states (for resuming)
+        vis_data: Visualization samples from previous run (for resuming)
         
     Returns:
         Trained model
@@ -36,6 +41,13 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
     # Create a checkpoint directory within visualizations
     checkpoint_dir = os.path.join(vis_dir, 'checkpoints')
     os.makedirs(checkpoint_dir, exist_ok=True)
+    
+    # Restore random states if resuming
+    if random_state:
+        torch.set_rng_state(random_state['torch'])
+        np.random.set_state(random_state['numpy'])
+        import random
+        random.setstate(random_state['python'])
     
     # Move model to device
     model = model.to(device)
@@ -63,12 +75,21 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
     # Learning rate scheduler
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, factor=0.5)
     
-    # Get a few samples from the test set for visualization
-    vis_dataloader = torch.utils.data.DataLoader(test_loader.dataset, batch_size=4, shuffle=True)
-    vis_batch = next(iter(vis_dataloader))
-    vis_incomplete, vis_complete = vis_batch
+    # Load scheduler state if resuming
+    if scheduler_state:
+        scheduler.__dict__.update(scheduler_state)
     
-    # Save initial visualizations for reference
+    # Get visualization samples
+    if vis_data:
+        # Use the same visualization samples as before
+        vis_incomplete, vis_complete = vis_data
+    else:
+        # Get new samples for visualization
+        vis_dataloader = torch.utils.data.DataLoader(test_loader.dataset, batch_size=4, shuffle=True)
+        vis_batch = next(iter(vis_dataloader))
+        vis_incomplete, vis_complete = vis_batch
+    
+    # Save initial visualizations for reference if starting fresh
     if start_epoch == 0:
         with torch.no_grad():
             model.eval()
@@ -142,12 +163,24 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
         
         # Save checkpoint every epoch for safety
         checkpoint_path = os.path.join(checkpoint_dir, f'checkpoint_epoch_{epoch+1}.pth')
+        
+        # Capture current random states
+        random_states = {
+            'torch': torch.get_rng_state(),
+            'numpy': np.random.get_state(),
+            'python': random.getstate()
+        }
+        
         torch.save({
             'epoch': epoch,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state': scheduler.__dict__,  # Save full scheduler state
             'scaler': scaler.state_dict(),
             'loss': avg_val_loss,
+            'best_loss': best_loss,
+            'random_state': random_states,
+            'vis_data': (vis_incomplete, vis_complete)  # Save visualization data
         }, checkpoint_path)
         
         # Save best model
@@ -157,8 +190,11 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state': scheduler.__dict__,
                 'scaler': scaler.state_dict(),
                 'loss': best_loss,
+                'random_state': random_states,
+                'vis_data': (vis_incomplete, vis_complete)
             }, save_path)
             
             # Also save to the vis directory with a clear name
@@ -167,8 +203,11 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state': scheduler.__dict__,
                 'scaler': scaler.state_dict(),
                 'loss': best_loss,
+                'random_state': random_states,
+                'vis_data': (vis_incomplete, vis_complete)
             }, best_model_path)
             
             print(f'Model saved at epoch {epoch+1} with validation loss {best_loss:.6f}')

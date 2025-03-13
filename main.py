@@ -59,11 +59,14 @@ def main():
             f.write(f"{arg}: {value}\n")
     
     if args.mode == 'train':
-        # Initialize epoch and optimizer state
+        # Initialize epoch and states
         start_epoch = 0
         optimizer_state = None
         scaler_state = None
+        scheduler_state = None
         best_loss = float('inf')
+        random_state = None
+        vis_data = None
         
         # Resume from checkpoint if specified
         if args.resume:
@@ -74,7 +77,10 @@ def main():
                 start_epoch = checkpoint['epoch'] + 1
                 optimizer_state = checkpoint['optimizer_state_dict']
                 scaler_state = checkpoint.get('scaler', None)
-                best_loss = checkpoint['loss']
+                scheduler_state = checkpoint.get('scheduler_state', None)
+                best_loss = checkpoint.get('best_loss', checkpoint['loss'])
+                random_state = checkpoint.get('random_state', None)
+                vis_data = checkpoint.get('vis_data', None)
                 print(f"Resuming from epoch {start_epoch} with best loss {best_loss:.6f}")
                 
                 # Copy the checkpoint to the log directory for reference
@@ -94,8 +100,12 @@ def main():
             vis_dir=run_log_dir,
             optimizer_state=optimizer_state,
             scaler_state=scaler_state,
-            best_loss=best_loss
+            scheduler_state=scheduler_state,
+            best_loss=best_loss,
+            random_state=random_state,
+            vis_data=vis_data
         )
+        
     else:
         # For testing, load the specified checkpoint
         checkpoint_path = args.resume if args.resume else model_path
