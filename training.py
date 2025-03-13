@@ -8,9 +8,34 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 
-def train_model(model, train_loader, test_loader, num_epochs=50, device='cuda', save_path='model.pth', vis_dir='visualizations'):
+def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, device='cuda', 
+                save_path='model.pth', vis_dir='visualizations', optimizer_state=None, 
+                scaler_state=None, best_loss=float('inf')):
+    """
+    Train the model with support for resuming from checkpoints
+    
+    Args:
+        model: The neural network model
+        train_loader: DataLoader for training data
+        test_loader: DataLoader for validation data
+        num_epochs: Total number of epochs to train
+        start_epoch: Epoch to start training from (for resuming)
+        device: Device to train on (cuda or cpu)
+        save_path: Path to save the best model
+        vis_dir: Directory to save visualizations
+        optimizer_state: State dict of optimizer (for resuming)
+        scaler_state: State dict of gradient scaler (for resuming)
+        best_loss: Best validation loss so far (for resuming)
+        
+    Returns:
+        Trained model
+    """
     # Create directory for visualizations if it doesn't exist
     os.makedirs(vis_dir, exist_ok=True)
+    
+    # Create a checkpoint directory within visualizations
+    checkpoint_dir = os.path.join(vis_dir, 'checkpoints')
+    os.makedirs(checkpoint_dir, exist_ok=True)
     
     # Move model to device
     model = model.to(device)
@@ -18,22 +43,44 @@ def train_model(model, train_loader, test_loader, num_epochs=50, device='cuda', 
     # Define loss function and optimizer
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, factor=0.5)
+    
+    # Load optimizer state if resuming
+    if optimizer_state:
+        optimizer.load_state_dict(optimizer_state)
+        # Move optimizer state to the correct device
+        for state in optimizer.state.values():
+            for k, v in state.items():
+                if isinstance(v, torch.Tensor):
+                    state[k] = v.to(device)
     
     # Initialize gradient scaler for mixed precision training
     scaler = GradScaler()
     
-    # Track best model
-    best_loss = float('inf')
+    # Load scaler state if resuming
+    if scaler_state:
+        scaler.load_state_dict(scaler_state)
+    
+    # Learning rate scheduler
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, factor=0.5)
     
     # Get a few samples from the test set for visualization
-    vis_samples = []
     vis_dataloader = torch.utils.data.DataLoader(test_loader.dataset, batch_size=4, shuffle=True)
     vis_batch = next(iter(vis_dataloader))
     vis_incomplete, vis_complete = vis_batch
     
+    # Save initial visualizations for reference
+    if start_epoch == 0:
+        with torch.no_grad():
+            model.eval()
+            with autocast():
+                vis_outputs = model(vis_incomplete.to(device))
+            
+            save_visualizations(vis_incomplete, vis_outputs, vis_complete, 
+                              os.path.join(vis_dir, 'initial_state.png'),
+                              title="Initial Model State")
+    
     # Training loop
-    for epoch in range(num_epochs):
+    for epoch in range(start_epoch, num_epochs):
         # Training phase
         model.train()
         train_loss = 0.0
@@ -93,6 +140,16 @@ def train_model(model, train_loader, test_loader, num_epochs=50, device='cuda', 
               f'Val Loss: {avg_val_loss:.6f}, '
               f'LR: {optimizer.param_groups[0]["lr"]:.6f}')
         
+        # Save checkpoint every epoch for safety
+        checkpoint_path = os.path.join(checkpoint_dir, f'checkpoint_epoch_{epoch+1}.pth')
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scaler': scaler.state_dict(),
+            'loss': avg_val_loss,
+        }, checkpoint_path)
+        
         # Save best model
         if avg_val_loss < best_loss:
             best_loss = avg_val_loss
@@ -100,9 +157,20 @@ def train_model(model, train_loader, test_loader, num_epochs=50, device='cuda', 
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
-                'scaler': scaler.state_dict(),  # Save scaler state
+                'scaler': scaler.state_dict(),
                 'loss': best_loss,
             }, save_path)
+            
+            # Also save to the vis directory with a clear name
+            best_model_path = os.path.join(vis_dir, 'best_model.pth')
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scaler': scaler.state_dict(),
+                'loss': best_loss,
+            }, best_model_path)
+            
             print(f'Model saved at epoch {epoch+1} with validation loss {best_loss:.6f}')
         
         # Generate and save visualizations for this epoch
@@ -111,45 +179,9 @@ def train_model(model, train_loader, test_loader, num_epochs=50, device='cuda', 
             with autocast():
                 vis_outputs = model(vis_incomplete.to(device))
             
-            # Create a figure to visualize results
-            fig, axes = plt.subplots(4, 3, figsize=(15, 20))
-            
-            for i in range(min(4, len(vis_incomplete))):
-                # Get the images
-                input_img = vis_incomplete[i, 0].cpu().numpy()
-                output_img = vis_outputs[i, 0].cpu().numpy()
-                target_img = vis_complete[i, 0].cpu().numpy()
-                
-                # Determine global min and max for consistent colormap scaling
-                vmin = min(input_img.min(), output_img.min(), target_img.min())
-                vmax = max(input_img.max(), output_img.max(), target_img.max())
-                
-                # Plot input
-                im = axes[i, 0].imshow(input_img, cmap='viridis', vmin=vmin, vmax=vmax)
-                axes[i, 0].set_title('Input (Incomplete)')
-                axes[i, 0].axis('off')
-                
-                # Plot output
-                im = axes[i, 1].imshow(output_img, cmap='viridis', vmin=vmin, vmax=vmax)
-                axes[i, 1].set_title('Output (Predicted)')
-                axes[i, 1].axis('off')
-                
-                # Plot ground truth
-                im = axes[i, 2].imshow(target_img, cmap='viridis', vmin=vmin, vmax=vmax)
-                axes[i, 2].set_title('Ground Truth (Complete)')
-                axes[i, 2].axis('off')
-                
-                # Add a colorbar to the last image in each row
-                plt.colorbar(im, ax=axes[i, 2], fraction=0.046, pad=0.04)
-            
-            # Add epoch information to the title
-            plt.suptitle(f'Epoch {epoch+1} - Validation Loss: {avg_val_loss:.6f}', fontsize=16)
-            plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-            
-            # Save the figure
             vis_path = os.path.join(vis_dir, f'epoch_{epoch+1:03d}.png')
-            plt.savefig(vis_path, dpi=200)
-            plt.close(fig)
+            save_visualizations(vis_incomplete, vis_outputs, vis_complete, vis_path,
+                              title=f'Epoch {epoch+1} - Validation Loss: {avg_val_loss:.6f}')
             print(f"Visualization saved to {vis_path}")
     
     # Load best model
@@ -157,3 +189,48 @@ def train_model(model, train_loader, test_loader, num_epochs=50, device='cuda', 
     model.load_state_dict(checkpoint['model_state_dict'])
     
     return model
+
+def save_visualizations(incomplete, outputs, complete, filepath, title="Visualization"):
+    """Helper function to save visualizations"""
+    # Create a figure to visualize results
+    fig, axes = plt.subplots(min(4, len(incomplete)), 3, figsize=(15, 20))
+    
+    # Handle the case where there's only one sample
+    if min(4, len(incomplete)) == 1:
+        axes = axes.reshape(1, 3)
+    
+    for i in range(min(4, len(incomplete))):
+        # Get the images
+        input_img = incomplete[i, 0].cpu().numpy()
+        output_img = outputs[i, 0].cpu().numpy()
+        target_img = complete[i, 0].cpu().numpy()
+        
+        # Determine global min and max for consistent colormap scaling
+        vmin = min(input_img.min(), output_img.min(), target_img.min())
+        vmax = max(input_img.max(), output_img.max(), target_img.max())
+        
+        # Plot input
+        im = axes[i, 0].imshow(input_img, cmap='viridis', vmin=vmin, vmax=vmax)
+        axes[i, 0].set_title('Input (Incomplete)')
+        axes[i, 0].axis('off')
+        
+        # Plot output
+        im = axes[i, 1].imshow(output_img, cmap='viridis', vmin=vmin, vmax=vmax)
+        axes[i, 1].set_title('Output (Predicted)')
+        axes[i, 1].axis('off')
+        
+        # Plot ground truth
+        im = axes[i, 2].imshow(target_img, cmap='viridis', vmin=vmin, vmax=vmax)
+        axes[i, 2].set_title('Ground Truth (Complete)')
+        axes[i, 2].axis('off')
+        
+        # Add a colorbar to the last image in each row
+        plt.colorbar(im, ax=axes[i, 2], fraction=0.046, pad=0.04)
+    
+    # Add title information
+    plt.suptitle(title, fontsize=16)
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    
+    # Save the figure
+    plt.savefig(filepath, dpi=200)
+    plt.close(fig)
