@@ -46,7 +46,6 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
     if random_state:
         torch.set_rng_state(random_state['torch'])
         np.random.set_state(random_state['numpy'])
-        import random
         random.setstate(random_state['python'])
     
     # Move model to device
