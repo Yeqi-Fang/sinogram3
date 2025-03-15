@@ -138,6 +138,7 @@ class UNet(nn.Module):
             self.layer3 = resnet.layer3  # 256 channels
             self.layer4 = resnet.layer4  # 512 channels
 
+
             # Decoder with correct channel numbers
             if self.attention:
                 self.up1 = AttentionUp(512, 256, 256, bilinear)
