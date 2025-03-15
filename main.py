@@ -30,6 +30,7 @@ def main():
     parser.add_argument('--resume', type=str, default=None, help='Path to checkpoint for resuming training')
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'], help='Mode: train or test')
     parser.add_argument('--gpu', type=int, default=0, help='GPU ID')
+    parser.add_argument('--attention', type=bool, default=False, help='attention')
     args = parser.parse_args()
     
     # Set device
@@ -40,7 +41,7 @@ def main():
     train_loader, test_loader = create_dataloaders(args.data_dir, args.batch_size)
     
     # Create model 
-    model = UNet(n_channels=1, n_classes=1, bilinear=False)
+    model = UNet(n_channels=1, n_classes=1, bilinear=False, attention=args.attention)
     
     # Create timestamped log directory
     timestamp = get_timestamp()
