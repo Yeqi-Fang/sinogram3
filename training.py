@@ -12,7 +12,7 @@ import numpy as np
 def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, device='cuda', 
                 save_path='model.pth', vis_dir='visualizations', optimizer_state=None, 
                 scaler_state=None, best_loss=float('inf'), scheduler_state=None, 
-                random_state=None, vis_data=None):
+                random_state=None, vis_data=None, lr=1e-4):
     """
     Train the model with support for resuming from checkpoints
     
@@ -53,7 +53,7 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
     
     # Define loss function and optimizer
     criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
     
     # Load optimizer state if resuming
     if optimizer_state:

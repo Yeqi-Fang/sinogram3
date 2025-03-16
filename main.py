@@ -32,6 +32,7 @@ def main():
     parser.add_argument('--gpu', type=int, default=0, help='GPU ID')
     parser.add_argument('--attention', type=bool, default=False, help='attention')
     parser.add_argument('--pretrain', type=bool, default=False, help='pretrain')
+    parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
     args = parser.parse_args()
     
     # Set device
@@ -105,7 +106,8 @@ def main():
             scheduler_state=scheduler_state,
             best_loss=best_loss,
             random_state=random_state,
-            vis_data=vis_data
+            vis_data=vis_data,
+            lr=args.lr
         )
         
     else:
