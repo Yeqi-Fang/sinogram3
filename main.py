@@ -31,6 +31,7 @@ def main():
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'], help='Mode: train or test')
     parser.add_argument('--gpu', type=int, default=0, help='GPU ID')
     parser.add_argument('--attention', type=bool, default=False, help='attention')
+    parser.add_argument('--pretrain', type=bool, default=False, help='pretrain')
     args = parser.parse_args()
     
     # Set device
@@ -41,7 +42,7 @@ def main():
     train_loader, test_loader = create_dataloaders(args.data_dir, args.batch_size)
     
     # Create model 
-    model = UNet(n_channels=1, n_classes=1, bilinear=False, attention=args.attention)
+    model = UNet(n_channels=1, n_classes=1, bilinear=False, attention=args, pretrain=args.pretrain)
     
     # Create timestamped log directory
     timestamp = get_timestamp()
