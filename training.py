@@ -72,7 +72,7 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
         scaler.load_state_dict(scaler_state)
     
     # Learning rate scheduler
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, factor=0.5)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.3)
     
     # Load scheduler state if resuming
     if scheduler_state:
