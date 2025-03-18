@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 
-def evaluate_model(model, test_loader, device='cuda', num_samples=5):
+def evaluate_model(model, test_loader, device='cuda', num_samples=5, output_dir="."):
     model.eval()
     test_mse = 0.0
     test_psnr = 0.0
@@ -51,7 +51,7 @@ def evaluate_model(model, test_loader, device='cuda', num_samples=5):
     print(f"Test Results: MSE: {avg_mse:.6f}, PSNR: {avg_psnr:.4f} dB, SSIM: {avg_ssim:.4f}")
     
     # Visualize samples
-    fig, axes = plt.subplots(num_samples, 3, figsize=(12, 4*num_samples))
+    fig, axes = plt.subplots(num_samples, 3, figsize=(12, 3*num_samples))
     
     for i, (incomplete, output, complete) in enumerate(samples):
         axes[i, 0].imshow(incomplete, cmap='viridis')
@@ -67,7 +67,7 @@ def evaluate_model(model, test_loader, device='cuda', num_samples=5):
         axes[i, 2].axis('off')
     
     plt.tight_layout()
-    plt.savefig('sinogram_results.png', dpi=300)
+    plt.savefig(f'{output_dir}/sinogram_results.pdf', dpi=600)
     plt.close()
     
     return avg_mse, avg_psnr, avg_ssim

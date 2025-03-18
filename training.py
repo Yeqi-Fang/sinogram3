@@ -231,7 +231,7 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
 def save_visualizations(incomplete, outputs, complete, filepath, title="Visualization"):
     """Helper function to save visualizations"""
     # Create a figure to visualize results
-    fig, axes = plt.subplots(min(4, len(incomplete)), 3, figsize=(15, 20))
+    fig, axes = plt.subplots(min(4, len(incomplete)), 3, figsize=(16, 15), gridspec_kw={"width_ratios": [1, 1, 1.0675]})
     
     # Handle the case where there's only one sample
     if min(4, len(incomplete)) == 1:
@@ -263,12 +263,12 @@ def save_visualizations(incomplete, outputs, complete, filepath, title="Visualiz
         axes[i, 2].axis('off')
         
         # Add a colorbar to the last image in each row
-        plt.colorbar(im, ax=axes[i, 2], fraction=0.046, pad=0.04)
+        plt.colorbar(im, ax=axes[i, 2], fraction=0.04, pad=0.02)
     
     # Add title information
     plt.suptitle(title, fontsize=16)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     
     # Save the figure
-    plt.savefig(filepath, dpi=200)
+    plt.savefig(filepath, dpi=600)
     plt.close(fig)
