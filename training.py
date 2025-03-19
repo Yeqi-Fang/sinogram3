@@ -141,7 +141,7 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
                 complete = complete.to(device)
                 
                 # Forward pass with mixed precision
-                with autocast():
+                with autocast(device_type='cuda'):
                     outputs = model(incomplete)
                     loss = criterion(outputs, complete)
                 
@@ -214,7 +214,7 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
         # Generate and save visualizations for this epoch
         with torch.no_grad():
             model.eval()
-            with autocast():
+            with autocast(device_type='cuda'):
                 vis_outputs = model(vis_incomplete.to(device))
             
             vis_path = os.path.join(vis_dir, f'epoch_{epoch+1:03d}.png')
