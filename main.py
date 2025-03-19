@@ -41,7 +41,6 @@ def main():
     # Set device
     device = f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu'
     print(f'Using device: {device}')
-    print(args.test)
     # Create dataloaders
     train_loader, test_loader = create_dataloaders(args.data_dir, args.batch_size, test=args.test)
     
