@@ -43,7 +43,7 @@ def main():
     print(f'Using device: {device}')
     print(args.test)
     # Create dataloaders
-    train_loader, test_loader = create_dataloaders(args.data_dir, args.batch_size, args.test)
+    train_loader, test_loader = create_dataloaders(args.data_dir, args.batch_size, test=args.test)
     
     # Create model 
     if not args.light:
