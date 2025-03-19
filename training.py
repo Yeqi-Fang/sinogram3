@@ -3,7 +3,7 @@ import time
 from tqdm import tqdm
 import torch.nn as nn
 import torch
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast, GradScaler
 import matplotlib.pyplot as plt
 import os
 import random
@@ -65,7 +65,7 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
                     state[k] = v.to(device)
     
     # Initialize gradient scaler for mixed precision training
-    scaler = GradScaler()
+    scaler = GradScaler(device_type='cuda')
     
     # Load scaler state if resuming
     if scaler_state:
@@ -114,7 +114,7 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
             # Forward pass with mixed precision
             optimizer.zero_grad()
             
-            with autocast():
+            with autocast(device_type='cuda'):
                 outputs = model(incomplete)
                 loss = criterion(outputs, complete)
             
