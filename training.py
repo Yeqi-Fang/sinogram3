@@ -114,7 +114,7 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
             # Forward pass with mixed precision
             optimizer.zero_grad()
             
-            with autocast('cuda'):
+            with autocast(device_type='cuda'):
                 outputs = model(incomplete)
                 loss = criterion(outputs, complete)
             
