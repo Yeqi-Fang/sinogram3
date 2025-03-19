@@ -244,23 +244,23 @@ class LighterUNet(nn.Module):
                 self.up4 = Up(64, 64, 64, bilinear)
         else:
             # Non-pretrained encoder
-            self.inc = DoubleConv(n_channels, 32)
-            self.down1 = Down(32, 64)
-            self.down2 = Down(64, 128)
-            self.down3 = Down(128, 256)
-            self.down4 = Down(256, 512 // factor)
+            self.inc = DoubleConv(n_channels, 16)
+            self.down1 = Down(16, 32)
+            self.down2 = Down(32, 64)
+            self.down3 = Down(64, 128)
+            self.down4 = Down(128, 256 // factor)
             if self.attention:
-                self.up1 = AttentionUp(512, 256, 256 // factor, bilinear)
-                self.up2 = AttentionUp(256, 128, 128 // factor, bilinear)
-                self.up3 = AttentionUp(128, 64, 64 // factor, bilinear)
-                self.up4 = AttentionUp(64, 32, 32, bilinear)
+                self.up1 = AttentionUp(256, 128, 128 // factor, bilinear)
+                self.up2 = AttentionUp(128, 64, 64 // factor, bilinear)
+                self.up3 = AttentionUp(64, 32, 32 // factor, bilinear)
+                self.up4 = AttentionUp(32, 16, 16, bilinear)
             else:
-                self.up1 = Up(512, 256, 256 // factor, bilinear)
-                self.up2 = Up(256, 128, 128 // factor, bilinear)
-                self.up3 = Up(128, 64, 64 // factor, bilinear)
-                self.up4 = Up(64, 32, 32, bilinear)
+                self.up1 = Up(256, 128, 128 // factor, bilinear)
+                self.up2 = Up(128, 64, 64 // factor, bilinear)
+                self.up3 = Up(64, 32, 32 // factor, bilinear)
+                self.up4 = Up(32, 16, 16, bilinear)
 
-        self.outc = OutConv(32, n_classes)
+        self.outc = OutConv(16, n_classes)
         self.use_residual = True
 
     def forward(self, x):

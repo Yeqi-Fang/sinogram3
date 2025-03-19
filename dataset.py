@@ -2,7 +2,7 @@ import os
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
-# from torchvision import transforms
+from torchvision import transforms
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
@@ -14,9 +14,9 @@ class SinogramDataset(Dataset):
         # Determine dataset range based on train/test
         if not test:
             if is_train:
-                self.i_range = range(1, 171 - 19)  # 1 to 170
+                self.i_range = range(1, 171)  # 1 to 170
             else:
-                self.i_range = range(1, 37 - 11)   # 1 to 36
+                self.i_range = range(1, 37)   # 1 to 36
         else:
             if is_train:
                 self.i_range = range(1, 171 - 169)  # 1 to 170
@@ -73,9 +73,14 @@ class SinogramDataset(Dataset):
 
 
 # Example of how to use the dataset
-def create_dataloaders(data_dir, batch_size=8, num_workers=4, test=False):
+def create_dataloaders(data_dir, batch_size=8, num_workers=4, test=False, transform=False):
     # Define transforms
-    transform = None
+    if transform:
+        transform = transforms.Compose([
+        transforms.Resize(256),  # Resize to the specified dimensions
+        ])
+    else:
+        transform = None
     
     # Create datasets
     train_dataset = SinogramDataset(os.path.join(data_dir, 'train'), is_train=True, transform=transform, test=test)

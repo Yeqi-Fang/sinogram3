@@ -13,6 +13,7 @@ from pathlib import Path
 # Import our modules (defined above)
 from dataset import SinogramDataset, create_dataloaders
 from model import UNet, LighterUNet
+from unetr2D import UNETR2D
 from training import train_model
 from evaluation import evaluate_model
 
@@ -36,19 +37,24 @@ def main():
     parser.add_argument('--weight_decay', type=float, default=1e-5, help='weight decay')
     parser.add_argument('--light', type=bool, default=False, help='light model')
     parser.add_argument('--test', type=bool, default=False, help='only train for test')
+    parser.add_argument('--transformer', type=bool, default=False, help='use transformer')
     args = parser.parse_args()
     
     # Set device
     device = f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu'
     print(f'Using device: {device}')
     # Create dataloaders
-    train_loader, test_loader = create_dataloaders(args.data_dir, args.batch_size, test=args.test)
+    train_loader, test_loader = create_dataloaders(args.data_dir, args.batch_size, test=args.test, transform=args.transformer)
     
     # Create model 
-    if not args.light:
-        model = UNet(n_channels=1, n_classes=1, bilinear=False, attention=args, pretrain=args.pretrain)
+    if args.transformer:
+        model = UNETR2D(img_shape=(256, 256), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12).to(device)
+    
     else:
-        model = LighterUNet(n_channels=1, n_classes=1, bilinear=False, attention=args, pretrain=args.pretrain)
+        if not args.light:
+            model = UNet(n_channels=1, n_classes=1, bilinear=False, attention=args, pretrain=args.pretrain)
+        else:
+            model = LighterUNet(n_channels=1, n_classes=1, bilinear=False, attention=args, pretrain=args.pretrain)
     # Create timestamped log directory
     timestamp = get_timestamp()
     run_log_dir = os.path.join(args.log_dir, timestamp)
