@@ -11,7 +11,7 @@ class SinogramDataset(Dataset):
         self.data_dir = data_dir
         self.is_train = is_train
         self.transform = transform
-        
+        print('test', test)
         # Determine dataset range based on train/test
         if not test:
             if is_train:
