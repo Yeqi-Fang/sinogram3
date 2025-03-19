@@ -92,7 +92,7 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
     if start_epoch == 0:
         with torch.no_grad():
             model.eval()
-            with autocast():
+            with autocast(device_type='cuda'):
                 vis_outputs = model(vis_incomplete.to(device))
             
             save_visualizations(vis_incomplete, vis_outputs, vis_complete, 
