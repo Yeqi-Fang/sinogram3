@@ -35,6 +35,7 @@ def main():
     parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-5, help='weight decay')
     parser.add_argument('--light', type=bool, default=False, help='light model')
+    parser.add_argument('--test', type=bool, default=False, help='only train for test')
     args = parser.parse_args()
     
     # Set device
@@ -42,7 +43,7 @@ def main():
     print(f'Using device: {device}')
     
     # Create dataloaders
-    train_loader, test_loader = create_dataloaders(args.data_dir, args.batch_size)
+    train_loader, test_loader = create_dataloaders(args.data_dir, args.batch_size, args.test)
     
     # Create model 
     if not args.light:
@@ -100,7 +101,7 @@ def main():
             model, 
             train_loader, 
             test_loader, 
-            num_epochs=args.num_epochs,
+            num_epochs=args.num_epochs if not args.test else 1,
             start_epoch=start_epoch,
             device=device, 
             save_path=model_path,

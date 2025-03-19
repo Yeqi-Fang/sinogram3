@@ -7,17 +7,23 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 class SinogramDataset(Dataset):
-    def __init__(self, data_dir, is_train=True, transform=None):
+    def __init__(self, data_dir, is_train=True, transform=None, test=False):
         self.data_dir = data_dir
         self.is_train = is_train
         self.transform = transform
         
         # Determine dataset range based on train/test
-        if is_train:
-            self.i_range = range(1, 171 - 19)  # 1 to 170
+        if not test:
+            if is_train:
+                self.i_range = range(1, 171 - 19)  # 1 to 170
+            else:
+                self.i_range = range(1, 37 - 11)   # 1 to 36
         else:
-            self.i_range = range(1, 37 - 11)   # 1 to 36
-            
+            if is_train:
+                self.i_range = range(1, 171 - 169)  # 1 to 170
+            else:
+                self.i_range = range(1, 37 - 35)   # 1 to 36
+                
         self.j_range = range(1, 1765)  # 1 to 1764
         
         # Create all possible (i,j) pairs
@@ -68,13 +74,13 @@ class SinogramDataset(Dataset):
 
 
 # Example of how to use the dataset
-def create_dataloaders(data_dir, batch_size=8, num_workers=4):
+def create_dataloaders(data_dir, batch_size=8, num_workers=4, test=False):
     # Define transforms
     transform = None
     
     # Create datasets
-    train_dataset = SinogramDataset(os.path.join(data_dir, 'train'), is_train=True, transform=transform)
-    test_dataset = SinogramDataset(os.path.join(data_dir, 'test'), is_train=False, transform=transform)
+    train_dataset = SinogramDataset(os.path.join(data_dir, 'train'), is_train=True, transform=transform, test=test)
+    test_dataset = SinogramDataset(os.path.join(data_dir, 'test'), is_train=False, transform=transform, test=test)
     
     # Create dataloaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
