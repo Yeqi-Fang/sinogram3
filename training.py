@@ -53,7 +53,7 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
     
     # Define loss function and optimizer
     criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
     
     # Load optimizer state if resuming
     if optimizer_state:

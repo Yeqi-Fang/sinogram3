@@ -203,12 +203,106 @@ class UNet(nn.Module):
         else:
             return x
 
+
+class LighterUNet(nn.Module):
+    def __init__(self, n_channels=1, n_classes=1, bilinear=False, attention=False, pretrain=False):
+        super(LighterUNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear
+        self.attention = attention
+        self.pretrain = pretrain
+        factor = 2 if bilinear else 1
+
+        if pretrain:
+            # Pretrained ResNet34 encoder
+            resnet = models.resnet34(weights=ResNet34_Weights.DEFAULT)
+            if n_channels != 3:
+                self.input_layer = nn.Conv2d(n_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
+                self.input_layer.weight.data = torch.mean(resnet.conv1.weight.data, dim=1, keepdim=True).repeat(1, n_channels, 1, 1)
+            else:
+                self.input_layer = resnet.conv1
+            self.bn1 = resnet.bn1
+            self.relu = resnet.relu
+            self.maxpool = resnet.maxpool
+            self.layer1 = resnet.layer1  # 64 channels
+            self.layer2 = resnet.layer2  # 128 channels
+            self.layer3 = resnet.layer3  # 256 channels
+            self.layer4 = resnet.layer4  # 512 channels
+
+
+            # Decoder with correct channel numbers
+            if self.attention:
+                self.up1 = AttentionUp(512, 256, 256, bilinear)
+                self.up2 = AttentionUp(256, 128, 128, bilinear)
+                self.up3 = AttentionUp(128, 64, 64, bilinear)
+                self.up4 = AttentionUp(64, 64, 64, bilinear)
+            else:
+                self.up1 = Up(512, 256, 256, bilinear)
+                self.up2 = Up(256, 128, 128, bilinear)
+                self.up3 = Up(128, 64, 64, bilinear)
+                self.up4 = Up(64, 64, 64, bilinear)
+        else:
+            # Non-pretrained encoder
+            self.inc = DoubleConv(n_channels, 32)
+            self.down1 = Down(32, 64)
+            self.down2 = Down(64, 128)
+            self.down3 = Down(128, 256)
+            self.down4 = Down(256, 512 // factor)
+            if self.attention:
+                self.up1 = AttentionUp(512, 256, 256 // factor, bilinear)
+                self.up2 = AttentionUp(256, 128, 128 // factor, bilinear)
+                self.up3 = AttentionUp(128, 64, 64 // factor, bilinear)
+                self.up4 = AttentionUp(64, 32, 32, bilinear)
+            else:
+                self.up1 = Up(512, 256, 256 // factor, bilinear)
+                self.up2 = Up(256, 128, 128 // factor, bilinear)
+                self.up3 = Up(128, 64, 64 // factor, bilinear)
+                self.up4 = Up(64, 32, 32, bilinear)
+
+        self.outc = OutConv(32, n_classes)
+        self.use_residual = True
+
+    def forward(self, x):
+        x_in = x  # Store input for residual connection
+        if self.pretrain:
+            x = self.input_layer(x)
+            x = self.bn1(x)
+            x = self.relu(x)
+            x = self.maxpool(x)
+            x1 = x  # 64 channels
+            x2 = self.layer1(x1)  # 64 channels
+            x3 = self.layer2(x2)  # 128 channels
+            x4 = self.layer3(x3)  # 256 channels
+            x5 = self.layer4(x4)  # 512 channels
+        else:
+            x1 = self.inc(x)  # 64 channels
+            x2 = self.down1(x1)  # 128 channels
+            x3 = self.down2(x2)  # 256 channels
+            x4 = self.down3(x3)  # 512 channels
+            x5 = self.down4(x4)  # 1024 // factor channels
+
+        x = self.up1(x5, x4)
+        x = self.up2(x, x3)
+        x = self.up3(x, x2)
+        x = self.up4(x, x1)
+        x = self.outc(x)
+
+        if self.use_residual:
+            if x.shape != x_in.shape:
+                x_in = F.interpolate(x_in, size=x.shape[2:], mode='bilinear', align_corners=True)
+            return x + x_in
+        else:
+            return x
+
+
+
 # Test the model
 if __name__ == "__main__":
     dummy_input = torch.randn(1, 16, 224, 449)
     
     # Test with pretrain=True
-    model = UNet(n_channels=16, n_classes=1, bilinear=False, attention=False, pretrain=True)
+    model = LighterUNet(n_channels=16, n_classes=1, bilinear=False, attention=False, pretrain=True)
     print(f"Model parameters (pretrain=True): {sum(p.numel() for p in model.parameters())}")
     try:
         output = model(dummy_input)
@@ -219,7 +313,7 @@ if __name__ == "__main__":
         print(f"Model error with pretrain=True: {e}")
 
     # Test with pretrain=False
-    model = UNet(n_channels=16, n_classes=1, bilinear=False, attention=False, pretrain=False)
+    model = LighterUNet(n_channels=16, n_classes=1, bilinear=False, attention=False, pretrain=False)
     print(f"\nModel parameters (pretrain=False): {sum(p.numel() for p in model.parameters())}")
     try:
         output = model(dummy_input)

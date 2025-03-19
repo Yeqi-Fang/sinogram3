@@ -12,7 +12,7 @@ from pathlib import Path
 
 # Import our modules (defined above)
 from dataset import SinogramDataset, create_dataloaders
-from model import UNet
+from model import UNet, LighterUNet
 from training import train_model
 from evaluation import evaluate_model
 
@@ -33,6 +33,8 @@ def main():
     parser.add_argument('--attention', type=bool, default=False, help='attention')
     parser.add_argument('--pretrain', type=bool, default=False, help='pretrain')
     parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
+    parser.add_argument('--weight_decay', type=float, default=1e-5, help='weight decay')
+    parser.add_argument('--light', type=bool, default=False, help='light model')
     args = parser.parse_args()
     
     # Set device
@@ -43,8 +45,10 @@ def main():
     train_loader, test_loader = create_dataloaders(args.data_dir, args.batch_size)
     
     # Create model 
-    model = UNet(n_channels=1, n_classes=1, bilinear=False, attention=args, pretrain=args.pretrain)
-    
+    if not args.light:
+        model = UNet(n_channels=1, n_classes=1, bilinear=False, attention=args, pretrain=args.pretrain)
+    else:
+        model = LighterUNet(n_channels=1, n_classes=1, bilinear=False, attention=args, pretrain=args.pretrain)
     # Create timestamped log directory
     timestamp = get_timestamp()
     run_log_dir = os.path.join(args.log_dir, timestamp)
