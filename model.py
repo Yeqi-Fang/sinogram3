@@ -205,13 +205,14 @@ class UNet(nn.Module):
 
 
 class LighterUNet(nn.Module):
-    def __init__(self, n_channels=1, n_classes=1, bilinear=False, attention=False, pretrain=False):
+    def __init__(self, n_channels=1, n_classes=1, bilinear=False, attention=False, pretrain=False, light=0):
         super(LighterUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear
         self.attention = attention
         self.pretrain = pretrain
+        self.light = light
         factor = 2 if bilinear else 1
 
         if pretrain:
@@ -243,24 +244,45 @@ class LighterUNet(nn.Module):
                 self.up3 = Up(128, 64, 64, bilinear)
                 self.up4 = Up(64, 64, 64, bilinear)
         else:
-            # Non-pretrained encoder
-            self.inc = DoubleConv(n_channels, 16)
-            self.down1 = Down(16, 32)
-            self.down2 = Down(32, 64)
-            self.down3 = Down(64, 128)
-            self.down4 = Down(128, 256 // factor)
-            if self.attention:
-                self.up1 = AttentionUp(256, 128, 128 // factor, bilinear)
-                self.up2 = AttentionUp(128, 64, 64 // factor, bilinear)
-                self.up3 = AttentionUp(64, 32, 32 // factor, bilinear)
-                self.up4 = AttentionUp(32, 16, 16, bilinear)
-            else:
-                self.up1 = Up(256, 128, 128 // factor, bilinear)
-                self.up2 = Up(128, 64, 64 // factor, bilinear)
-                self.up3 = Up(64, 32, 32 // factor, bilinear)
-                self.up4 = Up(32, 16, 16, bilinear)
-
-        self.outc = OutConv(16, n_classes)
+            if self.light == 1:
+                # Non-pretrained encoder
+                self.inc = DoubleConv(n_channels, 16)
+                self.down1 = Down(16, 32)
+                self.down2 = Down(32, 64)
+                self.down3 = Down(64, 128)
+                self.down4 = Down(128, 256 // factor)
+                if self.attention:
+                    self.up1 = AttentionUp(256, 128, 128 // factor, bilinear)
+                    self.up2 = AttentionUp(128, 64, 64 // factor, bilinear)
+                    self.up3 = AttentionUp(64, 32, 32 // factor, bilinear)
+                    self.up4 = AttentionUp(32, 16, 16, bilinear)
+                else:
+                    self.up1 = Up(256, 128, 128 // factor, bilinear)
+                    self.up2 = Up(128, 64, 64 // factor, bilinear)
+                    self.up3 = Up(64, 32, 32 // factor, bilinear)
+                    self.up4 = Up(32, 16, 16, bilinear)
+            elif self.light == 2:
+                self.inc = DoubleConv(n_channels, 8)
+                self.down1 = Down(8, 16)
+                self.down2 = Down(16, 32)
+                self.down3 = Down(32, 64)
+                self.down4 = Down(64, 128 // factor)
+                if self.attention:
+                    self.up1 = AttentionUp(128, 64, 64 // factor, bilinear)
+                    self.up2 = AttentionUp(64, 32, 32 // factor, bilinear)
+                    self.up3 = AttentionUp(32, 16, 16 // factor, bilinear)
+                    self.up4 = AttentionUp(16, 8, 8, bilinear)
+                else:
+                    self.up1 = Up(128, 64, 64 // factor, bilinear)
+                    self.up2 = Up(64, 32, 32 // factor, bilinear)
+                    self.up3 = Up(32, 16, 16 // factor, bilinear)
+                    self.up4 = Up(16, 8, 8, bilinear)
+        if light == 1:
+            self.outc = OutConv(16, n_classes)
+        elif light == 2:
+            self.outc = OutConv(8, n_classes)
+        else:
+            self.outc = OutConv(64, n_classes)
         self.use_residual = True
 
     def forward(self, x):

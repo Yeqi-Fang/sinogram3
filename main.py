@@ -35,7 +35,7 @@ def main():
     parser.add_argument('--pretrain', type=bool, default=False, help='pretrain')
     parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-5, help='weight decay')
-    parser.add_argument('--light', type=bool, default=False, help='light model')
+    parser.add_argument('--light', type=int, default=0, help='light model')
     parser.add_argument('--test', type=bool, default=False, help='only train for test')
     parser.add_argument('--transformer', type=bool, default=False, help='use transformer')
     args = parser.parse_args()
@@ -54,7 +54,7 @@ def main():
         if not args.light:
             model = UNet(n_channels=1, n_classes=1, bilinear=False, attention=args, pretrain=args.pretrain)
         else:
-            model = LighterUNet(n_channels=1, n_classes=1, bilinear=False, attention=args, pretrain=args.pretrain)
+            model = LighterUNet(n_channels=1, n_classes=1, bilinear=False, attention=args, pretrain=args.pretrain, light=args.light)
     # Create timestamped log directory
     timestamp = get_timestamp()
     run_log_dir = os.path.join(args.log_dir, timestamp)
