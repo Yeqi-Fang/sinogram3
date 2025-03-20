@@ -4,7 +4,7 @@
 cat > ~/monitor_and_run.sh << 'EOF'
 #!/bin/bash
 
-PID_TO_MONITOR=151603
+PID_TO_MONITOR=150603
 COMMAND="python main.py --data_dir /mnt/d/fyq/sinogram/2e9div_smooth --mode train --batch_size 48 --num_epochs 10 --models_dir checkpoints --attention 1 --lr 2e-5 --light 2"
 
 echo "Starting monitor for process $PID_TO_MONITOR"
