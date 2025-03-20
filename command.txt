@@ -7,3 +7,5 @@ python main.py --data_dir /mnt/d/fyq/sinogram/2e9div_smooth --mode train --batch
 python main.py --data_dir /mnt/d/fyq/sinogram/2e9div_smooth --mode train --batch_size 32 --num_epochs 10 --models_dir checkpoints --attention 1 --lr 8e-6 --light 1
 
 python main.py --data_dir /mnt/d/fyq/sinogram/2e9div_smooth --mode train --batch_size 32 --num_epochs 10 --models_dir checkpoints --attention 1 --lr 8e-6 --light 1 --transformer 1
+
+python main.py --data_dir /mnt/d/fyq/sinogram/2e9div_smooth --mode train --batch_size 48 --num_epochs 10 --models_dir checkpoints --attention 1 --lr 2e-5 --light 2
