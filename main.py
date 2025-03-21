@@ -48,7 +48,7 @@ def main():
     
     # Create model 
     if args.transformer:
-        model = UNETR2D(img_shape=(256, 256), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12).to(device)
+        model = UNETR2D(img_shape=(256, 256), input_dim=1, output_dim=1, embed_dim=384, patch_size=16, num_heads=6).to(device)
     
     else:
         if not args.light:

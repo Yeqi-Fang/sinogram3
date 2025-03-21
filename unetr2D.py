@@ -303,9 +303,9 @@ if __name__ == "__main__":
         img_shape=img_shape, 
         input_dim=input_dim, 
         output_dim=output_dim,
-        embed_dim=768,
+        embed_dim=384,
         patch_size=16,
-        num_heads=12
+        num_heads=6
     ).to(device)
     
     # 打印模型参数数量
