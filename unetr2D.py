@@ -264,7 +264,6 @@ class UNETR2D(nn.Module):
 
     def forward(self, x):
         # 获取Transformer编码器的多层级特征
-        print(x.shape)
         z = self.transformer(x)
         z0, z3, z6, z9, z12 = x, *z
         
