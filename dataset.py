@@ -77,7 +77,7 @@ def create_dataloaders(data_dir, batch_size=8, num_workers=4, test=False, transf
     # Define transforms
     if transform:
         transform = transforms.Compose([
-        transforms.Resize(256),  # Resize to the specified dimensions
+        transforms.Resize((256, 256)),  # Resize to the specified dimensions
         ])
     else:
         transform = None
