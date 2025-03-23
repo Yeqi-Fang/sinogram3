@@ -152,8 +152,8 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
     # Training loop
     for epoch in range(start_epoch, num_epochs):
         
-        alpha = criterion.update_alpha(epoch)
-        print(f"Epoch {epoch}, using alpha={alpha:.3f} (MAE weight)")
+        # alpha = criterion.update_alpha(epoch)
+        # print(f"Epoch {epoch}, using alpha={alpha:.3f} (MAE weight)")
         
         # Training phase
         model.train()
