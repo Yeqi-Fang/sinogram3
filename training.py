@@ -99,8 +99,8 @@ def train_model(model, train_loader, test_loader, num_epochs=50, start_epoch=0, 
     model = model.to(device)
     
     # Define loss function and optimizer
-    criterion = nn.MSELoss()
-    # criterion = nn.L1Loss()
+    # criterion = nn.MSELoss()
+    criterion = nn.L1Loss()
     # criterion = DynamicWeightedLoss(initial_alpha=0.1, max_alpha=0.8, epochs=num_epochs)
 
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
