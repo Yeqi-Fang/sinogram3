@@ -6,8 +6,7 @@ cat > ~/monitor_and_run.sh << 'EOF'
 
 PID_TO_MONITOR=334527
 COMMAND="python sinogram3/main.py --data_dir /mnt/d/fyq/sinogram/
-2e9div_smooth --mode train --batch_size 24 --num_epochs 15 --models_dir checkpoints --at
-tention 1 --lr 1e-4 --transformer 1 --log_dir ~/sinogram3/log"
+2e9div_smooth --mode train --batch_size 24 --num_epochs 15 --models_dir checkpoints --attention 1 --lr 1e-4 --transformer 1 --log_dir ~/sinogram3/log"
 
 echo "Starting monitor for process $PID_TO_MONITOR"
 echo "Will run: $COMMAND"
