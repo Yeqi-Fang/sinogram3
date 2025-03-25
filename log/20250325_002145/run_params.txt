@@ -1,0 +1,15 @@
+data_dir: /mnt/d/fyq/sinogram/2e9div_smooth
+batch_size: 48
+num_epochs: 100
+models_dir: checkpoints
+log_dir: log
+resume: None
+mode: train
+gpu: 0
+attention: True
+pretrain: False
+lr: 2e-05
+weight_decay: 1e-05
+light: 2
+test: False
+transformer: False
