@@ -11,3 +11,4 @@ python main.py --data_dir /mnt/d/fyq/sinogram/2e9div_smooth --mode train --batch
 python main.py --data_dir /mnt/d/fyq/sinogram/2e9div_smooth --mode train --batch_size 48 --num_epochs 10 --models_dir checkpoints --attention 1 --lr 2e-5 --light 2
 
 python main.py --data_dir /mnt/d/fyq/sinogram/2e9div_smooth --mode train --batch_size 48 --num_epochs 20 --models_dir checkpoints --attention 1 --lr 2e-5 --light 2
+
